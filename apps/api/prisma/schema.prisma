@@ -33,6 +33,8 @@ model User {
   resetTokens    PasswordResetToken[]
   refreshTokens  RefreshToken[]
   createdCustomers Customer[]      @relation("CustomerCreatedBy")
+  createdDeals   Deal[]           @relation("DealCreatedBy")
+  dealActivities DealActivity[]   @relation("DealActivityUser")
 
   @@map("users")
 }
@@ -143,6 +145,7 @@ model Employee {
   subordinates       Employee[]   @relation("EmployeeManager")
   managedDepartments Department[] @relation("DepartmentManager")
   assignedCustomers  Customer[]   @relation("CustomerAssignedTo")
+  assignedDeals      Deal[]       @relation("DealAssignedTo")
 
   @@map("employees")
 }
@@ -172,12 +175,67 @@ model Customer {
 
   assignedTo Employee? @relation("CustomerAssignedTo", fields: [assignedToId], references: [id])
   createdBy  User?     @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+  deals      Deal[]    @relation("DealCustomer")
 
   @@index([status])
   @@index([type])
   @@index([assignedToId])
   @@index([createdAt(sort: Desc)])
   @@map("customers")
+}
+
+// ---------- M3: Cơ hội bán hàng (Deals / Opportunities) ----------
+model Deal {
+  id                String    @id @default(uuid()) @db.Uuid
+  code              String    @unique @db.VarChar(50)
+  name              String    @db.VarChar(255)
+  customerId        String    @map("customer_id") @db.Uuid
+  value             Decimal   @default(0) @db.Decimal(15, 2) // giá trị dự kiến (VND)
+  currency          String    @default("VND") @db.VarChar(10)
+  probability       Int       @default(0) // xác suất thành công 0-100 (%)
+  stage             String    @default("prospecting") @db.VarChar(30) // prospecting | qualification | proposal | negotiation | closed_won | closed_lost
+  status            String    @default("open") @db.VarChar(20) // open | won | lost (suy ra từ stage)
+  source            String?   @db.VarChar(50) // website | referral | event | cold_call | social | other
+  expectedCloseDate DateTime? @map("expected_close_date") @db.Date
+  closedAt          DateTime? @map("closed_at") @db.Timestamptz(6)
+  lostReason        String?   @map("lost_reason")
+  description       String?
+  assignedToId      String?   @map("assigned_to_id") @db.Uuid
+  createdById       String?   @map("created_by_id") @db.Uuid
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt         DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  customer   Customer       @relation("DealCustomer", fields: [customerId], references: [id])
+  assignedTo Employee?      @relation("DealAssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User?          @relation("DealCreatedBy", fields: [createdById], references: [id])
+  activities DealActivity[] @relation("DealActivities")
+
+  @@index([stage])
+  @@index([status])
+  @@index([assignedToId])
+  @@index([customerId])
+  @@index([createdAt(sort: Desc)])
+  @@map("deals")
+}
+
+// Lịch sử hoạt động / ghi chú của mỗi cơ hội
+model DealActivity {
+  id          String   @id @default(uuid()) @db.Uuid
+  dealId      String   @map("deal_id") @db.Uuid
+  type        String   @db.VarChar(30) // note | stage_change | call | email | meeting | task | created
+  content     String?
+  fromStage   String?  @map("from_stage") @db.VarChar(30)
+  toStage     String?  @map("to_stage") @db.VarChar(30)
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  deal      Deal  @relation("DealActivities", fields: [dealId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("DealActivityUser", fields: [createdById], references: [id])
+
+  @@index([dealId])
+  @@index([createdAt(sort: Desc)])
+  @@map("deal_activities")
 }
 
 model AuditLog {

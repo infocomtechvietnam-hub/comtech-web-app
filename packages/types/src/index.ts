@@ -169,6 +169,138 @@ export interface CreateCustomerRequest {
 
 export type UpdateCustomerRequest = Partial<CreateCustomerRequest>;
 
+/* ==================== M3 — Cơ hội bán hàng (Deals) ==================== */
+
+/** Giai đoạn (stage) trong quy trình bán hàng */
+export type DealStage =
+  | 'prospecting'
+  | 'qualification'
+  | 'proposal'
+  | 'negotiation'
+  | 'closed_won'
+  | 'closed_lost';
+
+/** Trạng thái cơ hội (suy ra từ stage) */
+export type DealStatus = 'open' | 'won' | 'lost';
+
+/** Nguồn cơ hội (tái sử dụng nguồn khách hàng) */
+export type DealSource = CustomerSource;
+
+/** Loại hoạt động trong lịch sử cơ hội */
+export type DealActivityType =
+  | 'created'
+  | 'note'
+  | 'stage_change'
+  | 'call'
+  | 'email'
+  | 'meeting'
+  | 'task';
+
+/** Tóm tắt khách hàng gắn với cơ hội */
+export interface DealCustomerRef {
+  id: string;
+  code: string;
+  name: string;
+  type: CustomerType;
+}
+
+/** Người phụ trách cơ hội (nhân viên) */
+export interface DealAssignee {
+  id: string;
+  code: string;
+  fullName: string;
+  avatarUrl?: string | null;
+  jobTitle?: string | null;
+}
+
+export interface DealActivity {
+  id: string;
+  dealId: string;
+  type: DealActivityType;
+  content?: string | null;
+  fromStage?: DealStage | null;
+  toStage?: DealStage | null;
+  createdById?: string | null;
+  createdByName?: string | null;
+  createdAt: string;
+}
+
+export interface Deal {
+  id: string;
+  code: string;
+  name: string;
+  customerId: string;
+  customer?: DealCustomerRef | null;
+  value: number;
+  currency: string;
+  probability: number;
+  stage: DealStage;
+  status: DealStatus;
+  source?: DealSource | null;
+  expectedCloseDate?: string | null;
+  closedAt?: string | null;
+  lostReason?: string | null;
+  description?: string | null;
+  assignedToId?: string | null;
+  assignedTo?: DealAssignee | null;
+  createdById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  activities?: DealActivity[];
+}
+
+export interface CreateDealRequest {
+  name: string;
+  customerId: string;
+  value?: number;
+  probability?: number;
+  stage?: DealStage;
+  source?: DealSource;
+  expectedCloseDate?: string;
+  description?: string;
+  assignedToId?: string;
+}
+
+export type UpdateDealRequest = Partial<CreateDealRequest> & {
+  lostReason?: string;
+};
+
+export interface MoveDealStageRequest {
+  stage: DealStage;
+  lostReason?: string;
+}
+
+export interface CreateDealActivityRequest {
+  type: DealActivityType;
+  content: string;
+}
+
+/** Thống kê tổng hợp cơ hội bán hàng (dashboard) */
+export interface DealStageStat {
+  stage: DealStage;
+  count: number;
+  value: number;
+}
+
+export interface DealStats {
+  totalOpen: number;
+  totalOpenValue: number;
+  wonCount: number;
+  wonValue: number;
+  lostCount: number;
+  conversionRate: number; // % won / (won + lost)
+  weightedForecast: number; // tổng (value * probability) của cơ hội đang mở
+  byStage: DealStageStat[];
+}
+
+/** Cột Kanban: các cơ hội theo từng stage */
+export interface DealPipelineColumn {
+  stage: DealStage;
+  count: number;
+  value: number;
+  deals: Deal[];
+}
+
 export interface Paginated<T> {
   data: T[];
   total: number;

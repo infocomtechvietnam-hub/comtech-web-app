@@ -246,6 +246,137 @@ async function main() {
   }
   console.log(`✅ Đã tạo ${customerData.length} khách hàng mẫu`);
 
+  // ---------- 8. Cơ hội bán hàng mẫu (M3) ----------
+  const allCustomers = await prisma.customer.findMany({
+    where: { code: { startsWith: 'KH-' } },
+    orderBy: { code: 'asc' },
+  });
+  const custByCode = (code: string) =>
+    allCustomers.find((c) => c.code === code);
+
+  const dealData: {
+    name: string;
+    customerCode: string;
+    value: number;
+    probability: number;
+    stage: string;
+    source?: string;
+    expectedCloseDate?: string;
+    description?: string;
+  }[] = [
+    {
+      name: 'Triển khai hệ thống CRM cho Minh Anh',
+      customerCode: 'KH-0001', value: 250_000_000, probability: 75,
+      stage: 'negotiation', source: 'website',
+      expectedCloseDate: '2026-10-15',
+      description: 'Gói CRM 50 người dùng kèm đào tạo và bảo trì 1 năm.',
+    },
+    {
+      name: 'Dự án phần mềm quản lý cho FPT Solutions',
+      customerCode: 'KH-0002', value: 480_000_000, probability: 50,
+      stage: 'proposal', source: 'referral',
+      expectedCloseDate: '2026-11-30',
+      description: 'Đề xuất giải pháp tích hợp ERP - CRM.',
+    },
+    {
+      name: 'Tư vấn chuyển đổi số - Cẩm Tú',
+      customerCode: 'KH-0003', value: 45_000_000, probability: 25,
+      stage: 'qualification', source: 'social',
+      expectedCloseDate: '2026-10-05',
+    },
+    {
+      name: 'Cung cấp linh kiện cho Đại Phát',
+      customerCode: 'KH-0004', value: 320_000_000, probability: 100,
+      stage: 'closed_won', source: 'event',
+      expectedCloseDate: '2026-09-01',
+      description: 'Hợp đồng cung cấp linh kiện quý IV đã ký.',
+    },
+    {
+      name: 'Gói dịch vụ bảo trì Hoàng Gia',
+      customerCode: 'KH-0005', value: 60_000_000, probability: 0,
+      stage: 'closed_lost', source: 'cold_call',
+      description: 'Khách hàng tạm ngừng do thay đổi nhân sự.',
+    },
+    {
+      name: 'Phần mềm quản lý dự án - Tân Tiến',
+      customerCode: 'KH-0006', value: 150_000_000, probability: 25,
+      stage: 'qualification', source: 'website',
+      expectedCloseDate: '2026-12-20',
+    },
+    {
+      name: 'Tư vấn đầu tư BĐS - Quốc Khánh',
+      customerCode: 'KH-0007', value: 90_000_000, probability: 10,
+      stage: 'prospecting', source: 'referral',
+      expectedCloseDate: '2026-11-10',
+    },
+    {
+      name: 'Hệ thống quản lý học viên Ánh Dương',
+      customerCode: 'KH-0008', value: 210_000_000, probability: 50,
+      stage: 'proposal', source: 'other',
+      expectedCloseDate: '2026-10-25',
+      description: 'Triển khai LMS + module quản lý học phí.',
+    },
+    {
+      name: 'Nâng cấp hạ tầng máy chủ Minh Anh',
+      customerCode: 'KH-0001', value: 130_000_000, probability: 10,
+      stage: 'prospecting', source: 'referral',
+      expectedCloseDate: '2027-01-15',
+    },
+    {
+      name: 'Gói đào tạo nội bộ FPT Solutions',
+      customerCode: 'KH-0002', value: 75_000_000, probability: 100,
+      stage: 'closed_won', source: 'referral',
+      expectedCloseDate: '2026-08-20',
+      description: 'Đã hoàn thành 3 khóa đào tạo.',
+    },
+  ];
+
+  const statusFromStage = (stage: string) =>
+    stage === 'closed_won' ? 'won' : stage === 'closed_lost' ? 'lost' : 'open';
+
+  let dealIndex = 0;
+  for (const d of dealData) {
+    const code = `CH-${String(dealIndex + 1).padStart(4, '0')}`;
+    const customer = custByCode(d.customerCode);
+    if (!customer) {
+      dealIndex++;
+      continue;
+    }
+    const status = statusFromStage(d.stage);
+    const existing = await prisma.deal.findUnique({ where: { code } });
+    if (!existing) {
+      await prisma.deal.create({
+        data: {
+          code,
+          name: d.name,
+          customerId: customer.id,
+          value: d.value,
+          probability: d.probability,
+          stage: d.stage,
+          status,
+          source: d.source ?? null,
+          expectedCloseDate: d.expectedCloseDate
+            ? new Date(d.expectedCloseDate)
+            : null,
+          closedAt: status !== 'open' ? new Date() : null,
+          description: d.description ?? null,
+          assignedToId: pickSales(dealIndex),
+          createdById: adminUser?.id ?? null,
+          activities: {
+            create: {
+              type: 'created',
+              content: 'Đã tạo cơ hội bán hàng',
+              toStage: d.stage,
+              createdById: adminUser?.id ?? null,
+            },
+          },
+        },
+      });
+    }
+    dealIndex++;
+  }
+  console.log(`✅ Đã tạo ${dealData.length} cơ hội bán hàng mẫu`);
+
   console.log('🎉 Seed hoàn tất!');
   console.log('\n📋 Tài khoản mẫu:');
   console.log('   admin@comtech.vn / Admin@123456 (Quản trị viên)');
