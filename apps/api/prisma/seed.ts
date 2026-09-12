@@ -150,6 +150,102 @@ async function main() {
   }
   console.log('✅ Đã gán trưởng phòng');
 
+  // ---------- 7. Khách hàng mẫu (M2) ----------
+  const adminUser = await prisma.user.findFirst({
+    where: { email: 'admin@comtech.vn' },
+  });
+  const salesEmployees = await prisma.employee.findMany({
+    where: { workEmail: { in: ['sales1@comtech.vn', 'sales2@comtech.vn', 'sales3@comtech.vn'] } },
+    orderBy: { workEmail: 'asc' },
+  });
+  const pickSales = (i: number) =>
+    salesEmployees.length ? salesEmployees[i % salesEmployees.length].id : null;
+
+  const customerData = [
+    {
+      name: 'Công ty TNHH Thương mại Minh Anh',
+      type: 'company', contactPerson: 'Nguyễn Minh Anh', email: 'contact@minhanh.vn',
+      phone: '0901234567', taxCode: '0312345678', website: 'https://minhanh.vn',
+      industry: 'Bán lẻ', source: 'website', status: 'active', city: 'TP. Hồ Chí Minh',
+      address: '123 Nguyễn Huệ, Quận 1', notes: 'Khách hàng thân thiết, ký hợp đồng thường niên.',
+    },
+    {
+      name: 'Công ty Cổ phần Công nghệ FPT Solutions',
+      type: 'company', contactPerson: 'Trần Văn Bình', email: 'binh.tran@fptsolutions.vn',
+      phone: '0912345678', taxCode: '0301234567', website: 'https://fptsolutions.vn',
+      industry: 'Công nghệ thông tin', source: 'referral', status: 'prospect', city: 'Hà Nội',
+      address: '17 Duy Tân, Cầu Giấy', notes: 'Đang thương lượng dự án triển khai CRM.',
+    },
+    {
+      name: 'Nguyễn Thị Cẩm Tú',
+      type: 'individual', contactPerson: 'Nguyễn Thị Cẩm Tú', email: 'camtu.nguyen@gmail.com',
+      phone: '0923456789', industry: 'Tư vấn', source: 'social', status: 'lead',
+      city: 'Đà Nẵng', address: '45 Lê Duẩn, Hải Châu',
+    },
+    {
+      name: 'Công ty TNHH Sản xuất Đại Phát',
+      type: 'company', contactPerson: 'Lê Đại Phát', email: 'info@daiphat.com.vn',
+      phone: '0934567890', taxCode: '0398765432', industry: 'Sản xuất', source: 'event',
+      status: 'active', city: 'Bình Dương', address: 'KCN Sóng Thần, Dĩ An',
+      notes: 'Nhà cung cấp linh kiện, hợp tác lâu dài.',
+    },
+    {
+      name: 'Công ty CP Dịch vụ Hoàng Gia',
+      type: 'company', contactPerson: 'Phạm Hoàng Gia', email: 'lienhe@hoanggia.vn',
+      phone: '0945678901', taxCode: '0311122233', industry: 'Dịch vụ', source: 'cold_call',
+      status: 'inactive', city: 'TP. Hồ Chí Minh', address: '78 Cách Mạng Tháng 8, Quận 3',
+      notes: 'Tạm ngừng hợp tác do thay đổi nhân sự.',
+    },
+    {
+      name: 'Công ty TNHH Xây dựng Tân Tiến',
+      type: 'company', contactPerson: 'Võ Tân Tiến', email: 'contact@tantien.vn',
+      phone: '0956789012', taxCode: '0344455566', industry: 'Xây dựng', source: 'website',
+      status: 'prospect', city: 'Hà Nội', address: '250 Giải Phóng, Đống Đa',
+    },
+    {
+      name: 'Trần Quốc Khánh',
+      type: 'individual', contactPerson: 'Trần Quốc Khánh', email: 'khanh.tran@outlook.com',
+      phone: '0967890123', industry: 'Bất động sản', source: 'referral', status: 'lead',
+      city: 'TP. Hồ Chí Minh', address: '12 Phú Mỹ Hưng, Quận 7',
+    },
+    {
+      name: 'Công ty CP Giáo dục Ánh Dương',
+      type: 'company', contactPerson: 'Đỗ Ánh Dương', email: 'info@anhduong.edu.vn',
+      phone: '0978901234', taxCode: '0377788899', website: 'https://anhduong.edu.vn',
+      industry: 'Giáo dục', source: 'other', status: 'active', city: 'Cần Thơ',
+      address: '99 Trần Hưng Đạo, Ninh Kiều', notes: 'Triển khai hệ thống quản lý học viên.',
+    },
+  ];
+
+  let custIndex = 0;
+  for (const c of customerData) {
+    const code = `KH-${String(custIndex + 1).padStart(4, '0')}`;
+    await prisma.customer.upsert({
+      where: { code },
+      update: {},
+      create: {
+        code,
+        name: c.name,
+        type: c.type,
+        contactPerson: c.contactPerson ?? null,
+        email: c.email ?? null,
+        phone: c.phone ?? null,
+        taxCode: (c as any).taxCode ?? null,
+        website: (c as any).website ?? null,
+        industry: c.industry ?? null,
+        source: c.source ?? null,
+        status: c.status,
+        city: c.city ?? null,
+        address: c.address ?? null,
+        notes: (c as any).notes ?? null,
+        assignedToId: pickSales(custIndex),
+        createdById: adminUser?.id ?? null,
+      },
+    });
+    custIndex++;
+  }
+  console.log(`✅ Đã tạo ${customerData.length} khách hàng mẫu`);
+
   console.log('🎉 Seed hoàn tất!');
   console.log('\n📋 Tài khoản mẫu:');
   console.log('   admin@comtech.vn / Admin@123456 (Quản trị viên)');
