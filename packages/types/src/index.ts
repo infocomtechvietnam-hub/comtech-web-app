@@ -101,6 +101,74 @@ export interface ResetPasswordRequest {
   newPassword: string;
 }
 
+/** ===================== M2 — Khách hàng ===================== */
+
+/** Loại khách hàng */
+export type CustomerType = 'company' | 'individual';
+
+/** Trạng thái khách hàng trong quy trình bán hàng */
+export type CustomerStatus = 'lead' | 'prospect' | 'active' | 'inactive';
+
+/** Nguồn khách hàng */
+export type CustomerSource =
+  | 'website'
+  | 'referral'
+  | 'event'
+  | 'cold_call'
+  | 'social'
+  | 'other';
+
+/** Tóm tắt người phụ trách (nhân viên) gắn với khách hàng */
+export interface CustomerAssignee {
+  id: string;
+  code: string;
+  fullName: string;
+  avatarUrl?: string | null;
+  jobTitle?: string | null;
+}
+
+export interface Customer {
+  id: string;
+  code: string;
+  name: string;
+  type: CustomerType;
+  contactPerson?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  taxCode?: string | null;
+  website?: string | null;
+  industry?: string | null;
+  source?: CustomerSource | null;
+  status: CustomerStatus;
+  address?: string | null;
+  city?: string | null;
+  notes?: string | null;
+  assignedToId?: string | null;
+  assignedTo?: CustomerAssignee | null;
+  createdById?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCustomerRequest {
+  name: string;
+  type: CustomerType;
+  contactPerson?: string;
+  email?: string;
+  phone?: string;
+  taxCode?: string;
+  website?: string;
+  industry?: string;
+  source?: CustomerSource;
+  status?: CustomerStatus;
+  address?: string;
+  city?: string;
+  notes?: string;
+  assignedToId?: string;
+}
+
+export type UpdateCustomerRequest = Partial<CreateCustomerRequest>;
+
 export interface Paginated<T> {
   data: T[];
   total: number;

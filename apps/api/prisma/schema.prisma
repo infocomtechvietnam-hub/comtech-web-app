@@ -32,6 +32,7 @@ model User {
   auditLogs      AuditLog[]
   resetTokens    PasswordResetToken[]
   refreshTokens  RefreshToken[]
+  createdCustomers Customer[]      @relation("CustomerCreatedBy")
 
   @@map("users")
 }
@@ -141,8 +142,42 @@ model Employee {
   manager            Employee?    @relation("EmployeeManager", fields: [managerId], references: [id])
   subordinates       Employee[]   @relation("EmployeeManager")
   managedDepartments Department[] @relation("DepartmentManager")
+  assignedCustomers  Customer[]   @relation("CustomerAssignedTo")
 
   @@map("employees")
+}
+
+// M2 — Khách hàng (Customer)
+model Customer {
+  id            String    @id @default(uuid()) @db.Uuid
+  code          String    @unique @db.VarChar(50)
+  name          String    @db.VarChar(255)
+  type          String    @default("company") @db.VarChar(20) // company | individual
+  contactPerson String?   @map("contact_person") @db.VarChar(255)
+  email         String?   @db.VarChar(255)
+  phone         String?   @db.VarChar(20)
+  taxCode       String?   @map("tax_code") @db.VarChar(50)
+  website       String?   @db.VarChar(255)
+  industry      String?   @db.VarChar(255)
+  source        String?   @db.VarChar(50) // website | referral | event | cold_call | social | other
+  status        String    @default("lead") @db.VarChar(20) // lead | prospect | active | inactive
+  address       String?
+  city          String?   @db.VarChar(255)
+  notes         String?
+  assignedToId  String?   @map("assigned_to_id") @db.Uuid
+  createdById   String?   @map("created_by_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt     DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+  assignedTo Employee? @relation("CustomerAssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User?     @relation("CustomerCreatedBy", fields: [createdById], references: [id])
+
+  @@index([status])
+  @@index([type])
+  @@index([assignedToId])
+  @@index([createdAt(sort: Desc)])
+  @@map("customers")
 }
 
 model AuditLog {

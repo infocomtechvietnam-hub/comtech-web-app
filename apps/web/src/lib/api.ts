@@ -111,5 +111,6 @@ export const api = {
       method: 'PATCH',
       body: body ? JSON.stringify(body) : undefined,
     }),
+  delete: <T>(path: string) => rawRequest<T>(path, { method: 'DELETE' }),
   refresh: tryRefresh,
 };

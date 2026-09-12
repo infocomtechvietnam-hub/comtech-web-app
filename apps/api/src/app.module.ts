@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { DepartmentsModule } from './departments/departments.module';
+import { CustomersModule } from './customers/customers.module';
 import { AuditModule } from './audit/audit.module';
 import { AuditLogInterceptor } from './common/interceptors/audit-log.interceptor';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -28,6 +29,7 @@ import { PermissionsGuard } from './common/guards/permissions.guard';
     AuthModule,
     UsersModule,
     DepartmentsModule,
+    CustomersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },
