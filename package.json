@@ -1,0 +1,25 @@
+{
+  "name": "comtech-web-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "COMTECH CRM — Monorepo (Milestone 1)",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "dev:api": "pnpm --filter @comtech/api start:dev",
+    "dev:web": "pnpm --filter @comtech/web dev",
+    "prisma:generate": "pnpm --filter @comtech/api prisma:generate",
+    "prisma:migrate": "pnpm --filter @comtech/api prisma:migrate",
+    "prisma:seed": "pnpm --filter @comtech/api prisma:seed",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.3"
+  }
+}

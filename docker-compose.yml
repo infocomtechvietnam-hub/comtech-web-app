@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: comtech-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: comtech
+      POSTGRES_PASSWORD: comtech
+      POSTGRES_DB: comtech_crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - comtech_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comtech -d comtech_crm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  comtech_pgdata:
